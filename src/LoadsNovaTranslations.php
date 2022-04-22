@@ -33,7 +33,7 @@ trait LoadsNovaTranslations
     private function translations($pckgTransDir, $pckgName, $publish)
     {
         if (app()->runningInConsole() && $publish) {
-            $this->publishes([$pckgTransDir => lang_path("vendor/{$pckgName}")], 'translations');
+            $this->publishes([$pckgTransDir => $this->getLangPath($pckgName)], 'translations');
             return;
         }
 
@@ -54,7 +54,16 @@ trait LoadsNovaTranslations
             $this->loadNovaTranslations('en', 'local', $pckgTransDir, $pckgName);
         });
     }
+    private function getLangPath($pckgName)
+    {
+        $appVersion = app()->version();
+        $isLaravel9 = $appVersion >= '9.0.0';
 
+        return $isLaravel9
+            ? lang_path("vendor/{$pckgName}")
+            : resource_path("lang/vendor/{$pckgName}");
+    }
+    
     private function loadNovaTranslations($locale, $from, $packageTranslationsDir, $packageName)
     {
         $translationsFile = $this->getTranslationsFile($locale, $from, $packageTranslationsDir, $packageName);
@@ -101,7 +110,7 @@ trait LoadsNovaTranslations
 
         $fileDir = $from === 'local'
             ? $packageTranslationsDir
-            : lang_path("vendor/{$packageName}");
+            : $this->getLangPath($packageName);
 
         $filePath = "$fileDir/{$locale}.json";
 
@@ -113,4 +122,5 @@ trait LoadsNovaTranslations
 
         return !empty($fileContents) ? $filePath : null;
     }
+
 }
